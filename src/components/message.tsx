@@ -1,21 +1,54 @@
 import { ArrowUp } from "lucide-react";
 import { useState } from "react";
+import { CreateMessageReaction } from "../http/create-message-reaction";
+import { toast } from "sonner";
+import { useParams } from "react-router-dom";
+import { RemoveMessageReaction } from "../http/remove-message.reaction";
 
 interface MessageProps {
+  id: string;
   text: string;
   amountOfReactions: number;
   answered?: boolean;
 }
 
 export function Message({
+  id: messageId,
   text,
   amountOfReactions,
   answered = false,
 }: MessageProps) {
+  const { roomId } = useParams();
+
+  if (!roomId) {
+    throw new Error("Sem id da sala");
+  }
   const [hasReacted, setHasReacted] = useState(false);
 
-  function handleReactToMessage() {
-    setHasReacted((hasReacted) => !hasReacted);
+  async function createMessageReactionAction() {
+    if (!roomId) {
+      return;
+    }
+
+    try {
+      await CreateMessageReaction({ messageId, roomId });
+    } catch {
+      toast.error("Erro ao curtir mensagem.");
+    }
+    setHasReacted(true);
+  }
+
+  async function removeMessageReactionAction() {
+    if (!roomId) {
+      return;
+    }
+
+    try {
+      await RemoveMessageReaction({ messageId, roomId });
+    } catch {
+      toast.error("Erro ao retirar curtida de mensagem.");
+    }
+    setHasReacted(true);
   }
 
   return (
@@ -28,7 +61,7 @@ export function Message({
       {hasReacted ? (
         <button
           type="button"
-          onClick={handleReactToMessage}
+          onClick={removeMessageReactionAction}
           className="mt-3 flex items-center gap-2 text-orange-400 font-medium hover:text-orange-500"
         >
           <ArrowUp className="size-4" />
@@ -37,7 +70,7 @@ export function Message({
       ) : (
         <button
           type="button"
-          onClick={handleReactToMessage}
+          onClick={createMessageReactionAction}
           className="mt-3 flex items-center gap-2 text-zinc-400 font-medium hover:text-zinc-300"
         >
           <ArrowUp className="size-4" />
